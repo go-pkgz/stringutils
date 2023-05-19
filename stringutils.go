@@ -74,3 +74,23 @@ func HasCommonElement(a, b []string) bool {
 	}
 	return false
 }
+
+// HasPrefixSlice checks if any string in the slice starts with the given prefix
+func HasPrefixSlice(prefix string, slice []string) bool {
+	for _, v := range slice {
+		if strings.HasPrefix(v, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// HasSuffixSlice checks if any string in the slice ends with the given suffix
+func HasSuffixSlice(suffix string, slice []string) bool {
+	for _, v := range slice {
+		if strings.HasSuffix(v, suffix) {
+			return true
+		}
+	}
+	return false
+}

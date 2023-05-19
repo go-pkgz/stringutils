@@ -94,7 +94,7 @@ func TestSliceToString(t *testing.T) {
 }
 
 func TestHasCommonElement(t *testing.T) {
-	cases := []struct {
+	tests := []struct {
 		name string
 		a, b []string
 		want bool
@@ -107,9 +107,65 @@ func TestHasCommonElement(t *testing.T) {
 		{"element found at the end", []string{"a", "b", "c", "d"}, []string{"x", "y", "z", "d"}, true},
 	}
 
-	for _, tc := range cases {
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.want, HasCommonElement(tc.a, tc.b))
+		})
+	}
+}
+
+func TestHasPrefixSlice(t *testing.T) {
+	tests := []struct {
+		name   string
+		slice  []string
+		prefix string
+		exp    bool
+	}{
+		{
+			name:   "prefix exists",
+			slice:  []string{"apple", "banana", "cherry"},
+			prefix: "ap",
+			exp:    true,
+		},
+		{
+			name:   "prefix does not exist",
+			slice:  []string{"apple", "banana", "cherry"},
+			prefix: "kiwi",
+			exp:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.exp, HasPrefixSlice(tt.prefix, tt.slice))
+		})
+	}
+}
+
+func TestHasSuffixSlice(t *testing.T) {
+	tests := []struct {
+		name   string
+		slice  []string
+		suffix string
+		exp    bool
+	}{
+		{
+			name:   "suffix exists",
+			slice:  []string{"apple", "banana", "cherry"},
+			suffix: "na",
+			exp:    true,
+		},
+		{
+			name:   "suffix does not exist",
+			slice:  []string{"apple", "banana", "cherry"},
+			suffix: "kiwi",
+			exp:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.exp, HasSuffixSlice(tt.suffix, tt.slice))
 		})
 	}
 }
