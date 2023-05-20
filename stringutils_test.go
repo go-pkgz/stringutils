@@ -48,6 +48,8 @@ func TestDeDup(t *testing.T) {
 		keys []string
 		want []string
 	}{
+		{"nil input", nil, nil},
+		{"empty input", []string{}, nil},
 		{"removes duplicates", []string{"test", "test", "example"}, []string{"test", "example"}},
 		{"no duplicates", []string{"test", "test2", "example"}, []string{"test", "test2", "example"}},
 	}
@@ -65,6 +67,8 @@ func TestDeDupBig(t *testing.T) {
 		keys []string
 		want []string
 	}{
+		{"nil input", nil, nil},
+		{"empty input", []string{}, nil},
 		{"removes duplicates", []string{"test", "test", "example"}, []string{"test", "example"}},
 		{"no duplicates", []string{"test", "test2", "example"}, []string{"test", "test2", "example"}},
 	}
@@ -82,6 +86,8 @@ func TestSliceToString(t *testing.T) {
 		in   []interface{}
 		want []string
 	}{
+		{"nil input", nil, nil},
+		{"empty input", []any{}, nil},
 		{"converts number to string", []any{1, 2, 3}, []string{"1", "2", "3"}},
 		{"converts mixed slice to string", []any{1, "aaa", true, 0.55}, []string{"1", "aaa", "true", "0.55"}},
 		{"converts slice of byte slices to string", []any{[]byte("hi"), []byte("there")}, []string{"hi", "there"}},
