@@ -84,6 +84,7 @@ func TestSliceToString(t *testing.T) {
 	}{
 		{"converts number to string", []any{1, 2, 3}, []string{"1", "2", "3"}},
 		{"converts mixed slice to string", []any{1, "aaa", true, 0.55}, []string{"1", "aaa", "true", "0.55"}},
+		{"converts slice of byte slices to string", []any{[]byte("hi"), []byte("there")}, []string{"hi", "there"}},
 	}
 
 	for _, tt := range tests {
