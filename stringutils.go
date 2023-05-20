@@ -2,7 +2,9 @@ package stringutils
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
+	"unsafe"
 )
 
 // Contains string in slice
@@ -27,6 +29,9 @@ func ContainsAnySubstring(s string, subStrings []string) bool {
 
 // DeDup remove duplicates from slice. optimized for performance, good for short slices only!
 func DeDup(keys []string) []string {
+	if len(keys) == 0 {
+		return nil
+	}
 	l := len(keys) - 1
 	for i := 0; i < l; i++ {
 		for j := i + 1; j <= l; j++ {
@@ -43,6 +48,9 @@ func DeDup(keys []string) []string {
 
 // DeDupBig remove duplicates from slice. Should be used instead of DeDup for large slices
 func DeDupBig(keys []string) (result []string) {
+	if len(keys) == 0 {
+		return nil
+	}
 	result = make([]string, 0, len(keys))
 	visited := map[string]bool{}
 	for _, k := range keys {
@@ -56,11 +64,26 @@ func DeDupBig(keys []string) (result []string) {
 
 // SliceToString converts slice of any to slice of string
 func SliceToString(s []any) []string {
+	if len(s) == 0 {
+		return nil
+	}
 	strSlice := make([]string, len(s))
 	for i, v := range s {
+		if vb, ok := v.([]byte); ok {
+			strSlice[i] = bytesToString(vb)
+			continue
+		}
 		strSlice[i] = fmt.Sprintf("%v", v)
 	}
 	return strSlice
+}
+
+func bytesToString(bytes []byte) string {
+	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&bytes))
+	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
+		Data: sliceHeader.Data,
+		Len:  sliceHeader.Len,
+	}))
 }
 
 // HasCommonElement checks if any element of the second slice is in the first slice
