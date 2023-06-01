@@ -78,6 +78,7 @@ func SliceToString(s []any) []string {
 	return strSlice
 }
 
+// nolint
 func bytesToString(bytes []byte) string {
 	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&bytes))
 	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
