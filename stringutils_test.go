@@ -1,6 +1,7 @@
 package stringutils
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,6 +49,8 @@ func TestDeDup(t *testing.T) {
 		keys []string
 		want []string
 	}{
+		{"nil input", nil, nil},
+		{"empty input", []string{}, nil},
 		{"removes duplicates", []string{"test", "test", "example"}, []string{"test", "example"}},
 		{"no duplicates", []string{"test", "test2", "example"}, []string{"test", "test2", "example"}},
 	}
@@ -65,6 +68,8 @@ func TestDeDupBig(t *testing.T) {
 		keys []string
 		want []string
 	}{
+		{"nil input", nil, nil},
+		{"empty input", []string{}, nil},
 		{"removes duplicates", []string{"test", "test", "example"}, []string{"test", "example"}},
 		{"no duplicates", []string{"test", "test2", "example"}, []string{"test", "test2", "example"}},
 	}
@@ -82,8 +87,11 @@ func TestSliceToString(t *testing.T) {
 		in   []interface{}
 		want []string
 	}{
+		{"nil input", nil, nil},
+		{"empty input", []any{}, nil},
 		{"converts number to string", []any{1, 2, 3}, []string{"1", "2", "3"}},
 		{"converts mixed slice to string", []any{1, "aaa", true, 0.55}, []string{"1", "aaa", "true", "0.55"}},
+		{"converts slice of byte slices to string", []any{[]byte("hi"), []byte("there")}, []string{"hi", "there"}},
 	}
 
 	for _, tt := range tests {
@@ -168,4 +176,48 @@ func TestHasSuffixSlice(t *testing.T) {
 			assert.Equal(t, tt.exp, HasSuffixSlice(tt.suffix, tt.slice))
 		})
 	}
+}
+
+func BenchmarkSliceToString(b *testing.B) {
+	tmpl := []any{[]byte("fdjndfg")}
+	b.Run("unsafe (small slice)", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			SliceToString(tmpl)
+		}
+	})
+	b.Run("type assert (small slice)", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			sliceToStringAllocs(tmpl)
+		}
+	})
+
+	for i := 0; i < 20; i++ {
+		tmpl = append(tmpl, tmpl...)
+	}
+
+	b.Run("unsafe (big slice)", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			SliceToString(tmpl)
+		}
+	})
+	b.Run("type assert (big slice)", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			sliceToStringAllocs(tmpl)
+		}
+	})
+}
+
+func sliceToStringAllocs(s []any) []string {
+	if len(s) == 0 {
+		return nil
+	}
+	strSlice := make([]string, len(s))
+	for i, v := range s {
+		if vb, ok := v.([]byte); ok {
+			strSlice[i] = string(vb)
+			continue
+		}
+		strSlice[i] = fmt.Sprintf("%v", v)
+	}
+	return strSlice
 }
