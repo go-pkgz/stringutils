@@ -1,7 +1,9 @@
 package stringutils
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strings"
 	"unsafe"
@@ -117,4 +119,72 @@ func HasSuffixSlice(suffix string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+// Truncate cuts string to the given length (in runes) and adds ellipsis if it was truncated
+// if maxLen is less than 4 (3 chars for ellipsis + 1 rune from string), returns empty string
+func Truncate(s string, maxLen int) string {
+	if maxLen < 4 {
+		return ""
+	}
+
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return s
+	}
+
+	return string(runes[:maxLen-3]) + "..."
+}
+
+// TruncateWords cuts string to the given number of words and adds ellipsis if it was truncated
+// returns empty string if maxWords is 0
+func TruncateWords(s string, maxWords int) string {
+	if maxWords == 0 {
+		return ""
+	}
+
+	words := strings.Fields(s)
+	if len(words) <= maxWords {
+		return s
+	}
+
+	return strings.Join(words[:maxWords], " ") + "..."
+}
+
+// RandomWord generates pronounceable random word with length between minLen and maxLen
+func RandomWord(minLen, maxLen int) string {
+	if minLen < 2 {
+		minLen = 2
+	}
+	if maxLen < minLen {
+		maxLen = minLen
+	}
+
+	vowels := []rune("aeiou")
+	consonants := []rune("bcdfghjklmnpqrstvwxyz")
+
+	// make a random length between min and max
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(maxLen-minLen+1)))
+	length := minLen
+	if err == nil {
+		length += int(n.Int64())
+	}
+
+	var result strings.Builder
+	// decide to start with vowel or consonant
+	n, _ = rand.Int(rand.Reader, big.NewInt(2))
+	startWithVowel := n.Int64() == 0
+
+	for i := 0; i < length; i++ {
+		isVowel := (i%2 == 0) == startWithVowel
+		if isVowel {
+			n, _ = rand.Int(rand.Reader, big.NewInt(int64(len(vowels))))
+			result.WriteRune(vowels[n.Int64()])
+		} else {
+			n, _ = rand.Int(rand.Reader, big.NewInt(int64(len(consonants))))
+			result.WriteRune(consonants[n.Int64()])
+		}
+	}
+
+	return result.String()
 }
