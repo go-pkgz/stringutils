@@ -383,7 +383,7 @@ func BenchmarkSliceToString(b *testing.B) {
 	})
 	b.Run("type assert (small slice)", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			sliceToStringAllocs(tmpl)
+			sliceToStringAlloc(tmpl)
 		}
 	})
 
@@ -393,17 +393,18 @@ func BenchmarkSliceToString(b *testing.B) {
 
 	b.Run("unsafe (big slice)", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			SliceToString(tmpl)
+			_ = SliceToString(tmpl)
 		}
 	})
 	b.Run("type assert (big slice)", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			sliceToStringAllocs(tmpl)
+			_ = sliceToStringAlloc(tmpl)
 		}
 	})
 }
 
-func sliceToStringAllocs(s []any) []string {
+//nolint:unparam // false positive
+func sliceToStringAlloc(s []any) []string {
 	if len(s) == 0 {
 		return nil
 	}

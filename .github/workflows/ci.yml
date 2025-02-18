@@ -34,7 +34,8 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-
+          skip-pkg-cache: true
+          
       - name: install  goveralls
         run: go install github.com/mattn/goveralls@latest
 

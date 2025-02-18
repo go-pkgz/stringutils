@@ -1,3 +1,4 @@
+// Package stringutils provides utilities for working with strings.
 package stringutils
 
 import (
