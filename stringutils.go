@@ -5,9 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	"reflect"
 	"strings"
-	"unsafe"
 )
 
 // Contains string in slice
@@ -23,6 +21,9 @@ func Contains(src string, inSlice []string) bool {
 // ContainsAnySubstring checks if string contains any of provided substring
 func ContainsAnySubstring(s string, subStrings []string) bool {
 	for _, mx := range subStrings {
+		if mx == "" {
+			continue // skip empty substrings
+		}
 		if strings.Contains(s, mx) {
 			return true
 		}
@@ -55,10 +56,10 @@ func DeDupBig(keys []string) (result []string) {
 		return nil
 	}
 	result = make([]string, 0, len(keys))
-	visited := map[string]bool{}
+	visited := make(map[string]struct{}, len(keys))
 	for _, k := range keys {
 		if _, found := visited[k]; !found {
-			visited[k] = found
+			visited[k] = struct{}{}
 			result = append(result, k)
 		}
 	}
@@ -73,7 +74,7 @@ func SliceToString(s []any) []string {
 	strSlice := make([]string, len(s))
 	for i, v := range s {
 		if vb, ok := v.([]byte); ok {
-			strSlice[i] = bytesToString(vb)
+			strSlice[i] = string(vb) // safe conversion
 			continue
 		}
 		strSlice[i] = fmt.Sprintf("%v", v)
@@ -81,22 +82,22 @@ func SliceToString(s []any) []string {
 	return strSlice
 }
 
-// nolint
-func bytesToString(bytes []byte) string {
-	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&bytes))
-	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: sliceHeader.Data,
-		Len:  sliceHeader.Len,
-	}))
-}
-
 // HasCommonElement checks if any element of the second slice is in the first slice
 func HasCommonElement(a, b []string) bool {
-	for _, second := range b {
-		for _, first := range a {
-			if first == second {
-				return true
-			}
+	if len(a) == 0 || len(b) == 0 {
+		return false
+	}
+	// build set from smaller slice for better performance
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	set := make(map[string]struct{}, len(a))
+	for _, x := range a {
+		set[x] = struct{}{}
+	}
+	for _, y := range b {
+		if _, ok := set[y]; ok {
+			return true
 		}
 	}
 	return false

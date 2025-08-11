@@ -1,7 +1,6 @@
 package stringutils
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -35,6 +34,10 @@ func TestContainsAnySubstring(t *testing.T) {
 	}{
 		{"contains substring", "hello world", []string{"world", "example"}, true},
 		{"doesn't contain substring", "hello world", []string{"missing", "example"}, false},
+		{"empty substring skipped", "hello world", []string{"", "missing"}, false},
+		{"empty substring with match", "hello world", []string{"", "world"}, true},
+		{"only empty substring", "hello world", []string{""}, false},
+		{"multiple empty substrings", "hello world", []string{"", "", ""}, false},
 	}
 
 	for _, tt := range tests {
@@ -142,6 +145,24 @@ func TestHasPrefixSlice(t *testing.T) {
 			prefix: "kiwi",
 			exp:    false,
 		},
+		{
+			name:   "empty prefix",
+			slice:  []string{"apple", "banana", "cherry"},
+			prefix: "",
+			exp:    true,
+		},
+		{
+			name:   "empty slice",
+			slice:  []string{},
+			prefix: "ap",
+			exp:    false,
+		},
+		{
+			name:   "empty prefix and empty slice",
+			slice:  []string{},
+			prefix: "",
+			exp:    false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -168,6 +189,24 @@ func TestHasSuffixSlice(t *testing.T) {
 			name:   "suffix does not exist",
 			slice:  []string{"apple", "banana", "cherry"},
 			suffix: "kiwi",
+			exp:    false,
+		},
+		{
+			name:   "empty suffix",
+			slice:  []string{"apple", "banana", "cherry"},
+			suffix: "",
+			exp:    true,
+		},
+		{
+			name:   "empty slice",
+			slice:  []string{},
+			suffix: "na",
+			exp:    false,
+		},
+		{
+			name:   "empty suffix and empty slice",
+			slice:  []string{},
+			suffix: "",
 			exp:    false,
 		},
 	}
@@ -376,14 +415,9 @@ func TestRandomWord(t *testing.T) {
 
 func BenchmarkSliceToString(b *testing.B) {
 	tmpl := []any{[]byte("fdjndfg")}
-	b.Run("unsafe (small slice)", func(b *testing.B) {
+	b.Run("small slice", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			SliceToString(tmpl)
-		}
-	})
-	b.Run("type assert (small slice)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			sliceToStringAlloc(tmpl)
 		}
 	})
 
@@ -391,30 +425,9 @@ func BenchmarkSliceToString(b *testing.B) {
 		tmpl = append(tmpl, tmpl...)
 	}
 
-	b.Run("unsafe (big slice)", func(b *testing.B) {
+	b.Run("big slice", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_ = SliceToString(tmpl)
 		}
 	})
-	b.Run("type assert (big slice)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_ = sliceToStringAlloc(tmpl)
-		}
-	})
-}
-
-//nolint:unparam // false positive
-func sliceToStringAlloc(s []any) []string {
-	if len(s) == 0 {
-		return nil
-	}
-	strSlice := make([]string, len(s))
-	for i, v := range s {
-		if vb, ok := v.([]byte); ok {
-			strSlice[i] = string(vb)
-			continue
-		}
-		strSlice[i] = fmt.Sprintf("%v", v)
-	}
-	return strSlice
 }
