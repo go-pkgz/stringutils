@@ -1,6 +1,7 @@
 package stringutils
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -548,4 +549,326 @@ func BenchmarkSliceToString(b *testing.B) {
 			_ = SliceToString(tmpl)
 		}
 	})
+}
+
+func TestFilter(t *testing.T) {
+	tests := []struct {
+		name      string
+		slice     []string
+		predicate func(string) bool
+		want      []string
+	}{
+		{"filter even length", []string{"a", "bb", "ccc", "dddd"}, func(s string) bool { return len(s)%2 == 0 }, []string{"bb", "dddd"}},
+		{"filter contains letter", []string{"apple", "banana", "cherry"}, func(s string) bool { return strings.Contains(s, "a") }, []string{"apple", "banana"}},
+		{"filter none match", []string{"apple", "banana", "cherry"}, func(s string) bool { return len(s) > 10 }, nil},
+		{"filter all match", []string{"apple", "banana", "cherry"}, func(s string) bool { return s != "" }, []string{"apple", "banana", "cherry"}},
+		{"empty slice", []string{}, func(s string) bool { return true }, nil},
+		{"nil slice", nil, func(s string) bool { return true }, nil},
+		{"nil predicate", []string{"a", "b"}, nil, nil},
+		{"filter empty strings", []string{"", "a", "", "b", ""}, func(s string) bool { return s != "" }, []string{"a", "b"}},
+		{"unicode filter", []string{"hello", "мир", "world", "привет"}, func(s string) bool {
+			return strings.ContainsAny(s, "абвгдеёжзийклмнопрстуфхцчшщъыьэюя")
+		}, []string{"мир", "привет"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := Filter(tt.slice, tt.predicate)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		slice     []string
+		transform func(string) string
+		want      []string
+	}{
+		{"uppercase", []string{"a", "b", "c"}, strings.ToUpper, []string{"A", "B", "C"}},
+		{"add suffix", []string{"test", "example"}, func(s string) string { return s + "_suffix" }, []string{"test_suffix", "example_suffix"}},
+		{"length as string", []string{"a", "bb", "ccc"}, func(s string) string { return fmt.Sprintf("%d", len(s)) }, []string{"1", "2", "3"}},
+		{"empty slice", []string{}, strings.ToUpper, nil},
+		{"nil slice", nil, strings.ToUpper, nil},
+		{"nil transform", []string{"a", "b"}, nil, nil},
+		{"identity", []string{"a", "b", "c"}, func(s string) string { return s }, []string{"a", "b", "c"}},
+		{"unicode transform", []string{"hello", "world"}, func(s string) string { return s + "мир" }, []string{"helloмир", "worldмир"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := Map(tt.slice, tt.transform)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestReverse(t *testing.T) {
+	tests := []struct {
+		name  string
+		slice []string
+		want  []string
+	}{
+		{"normal", []string{"a", "b", "c", "d"}, []string{"d", "c", "b", "a"}},
+		{"single element", []string{"alone"}, []string{"alone"}},
+		{"two elements", []string{"first", "second"}, []string{"second", "first"}},
+		{"empty slice", []string{}, nil},
+		{"nil slice", nil, nil},
+		{"odd number", []string{"1", "2", "3", "4", "5"}, []string{"5", "4", "3", "2", "1"}},
+		{"with duplicates", []string{"a", "b", "a", "c", "b"}, []string{"b", "c", "a", "b", "a"}},
+		{"unicode", []string{"hello", "мир", "world"}, []string{"world", "мир", "hello"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := Reverse(tt.slice)
+			assert.Equal(t, tt.want, result)
+			// verify original is not modified
+			if len(tt.slice) > 1 {
+				assert.NotEqual(t, result, tt.slice, "original should not be modified")
+			}
+		})
+	}
+}
+
+func TestIndexOf(t *testing.T) {
+	tests := []struct {
+		name    string
+		slice   []string
+		element string
+		want    int
+	}{
+		{"found at start", []string{"a", "b", "c"}, "a", 0},
+		{"found in middle", []string{"a", "b", "c"}, "b", 1},
+		{"found at end", []string{"a", "b", "c"}, "c", 2},
+		{"not found", []string{"a", "b", "c"}, "d", -1},
+		{"empty slice", []string{}, "a", -1},
+		{"nil slice", nil, "a", -1},
+		{"find empty string", []string{"a", "", "b"}, "", 1},
+		{"duplicates returns first", []string{"a", "b", "a", "c"}, "a", 0},
+		{"unicode", []string{"hello", "мир", "world"}, "мир", 1},
+		{"case sensitive", []string{"Test", "test"}, "test", 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IndexOf(tt.slice, tt.element)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestLastIndexOf(t *testing.T) {
+	tests := []struct {
+		name    string
+		slice   []string
+		element string
+		want    int
+	}{
+		{"found at start", []string{"a", "b", "c"}, "a", 0},
+		{"found in middle", []string{"a", "b", "c"}, "b", 1},
+		{"found at end", []string{"a", "b", "c"}, "c", 2},
+		{"not found", []string{"a", "b", "c"}, "d", -1},
+		{"empty slice", []string{}, "a", -1},
+		{"nil slice", nil, "a", -1},
+		{"duplicates returns last", []string{"a", "b", "a", "c", "a"}, "a", 4},
+		{"unicode", []string{"hello", "мир", "world", "мир"}, "мир", 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := LastIndexOf(tt.slice, tt.element)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestDifference(t *testing.T) {
+	tests := []struct {
+		name string
+		a, b []string
+		want []string
+	}{
+		{"normal difference", []string{"a", "b", "c", "d"}, []string{"b", "d", "e"}, []string{"a", "c"}},
+		{"no common elements", []string{"a", "b", "c"}, []string{"d", "e", "f"}, []string{"a", "b", "c"}},
+		{"all common", []string{"a", "b", "c"}, []string{"a", "b", "c"}, nil},
+		{"empty a", []string{}, []string{"a", "b"}, nil},
+		{"empty b", []string{"a", "b"}, []string{}, []string{"a", "b"}},
+		{"both empty", []string{}, []string{}, nil},
+		{"nil a", nil, []string{"a"}, nil},
+		{"nil b", []string{"a", "b"}, nil, []string{"a", "b"}},
+		{"duplicates in a", []string{"a", "b", "a", "c", "b"}, []string{"b"}, []string{"a", "a", "c"}},
+		{"preserves order", []string{"d", "c", "b", "a"}, []string{"b", "d"}, []string{"c", "a"}},
+		{"unicode", []string{"hello", "мир", "world"}, []string{"мир"}, []string{"hello", "world"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := Difference(tt.a, tt.b)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestUnion(t *testing.T) {
+	tests := []struct {
+		name   string
+		slices [][]string
+		want   []string
+	}{
+		{"two slices", [][]string{{"a", "b"}, {"c", "d"}}, []string{"a", "b", "c", "d"}},
+		{"with duplicates", [][]string{{"a", "b"}, {"b", "c"}, {"c", "d"}}, []string{"a", "b", "c", "d"}},
+		{"empty slices", [][]string{{}, {}, {}}, nil},
+		{"single slice", [][]string{{"a", "b", "c"}}, []string{"a", "b", "c"}},
+		{"no slices", [][]string{}, nil},
+		{"nil in slices", [][]string{{"a"}, nil, {"b"}}, []string{"a", "b"}},
+		{"all same", [][]string{{"a", "a"}, {"a", "a"}, {"a"}}, []string{"a"}},
+		{"preserves order", [][]string{{"d", "c"}, {"b", "a"}, {"e"}}, []string{"d", "c", "b", "a", "e"}},
+		{"unicode", [][]string{{"hello", "мир"}, {"world", "мир"}}, []string{"hello", "мир", "world"}},
+		{"many slices", [][]string{{"1"}, {"2"}, {"3"}, {"1", "2", "3", "4"}}, []string{"1", "2", "3", "4"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := Union(tt.slices...)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestIntersection(t *testing.T) {
+	tests := []struct {
+		name string
+		a, b []string
+		want []string
+	}{
+		{"some common", []string{"a", "b", "c", "d"}, []string{"b", "d", "e", "f"}, []string{"b", "d"}},
+		{"no common", []string{"a", "b", "c"}, []string{"d", "e", "f"}, nil},
+		{"all common", []string{"a", "b", "c"}, []string{"c", "b", "a"}, []string{"a", "b", "c"}},
+		{"empty a", []string{}, []string{"a", "b"}, nil},
+		{"empty b", []string{"a", "b"}, []string{}, nil},
+		{"both empty", []string{}, []string{}, nil},
+		{"nil a", nil, []string{"a"}, nil},
+		{"nil b", []string{"a"}, nil, nil},
+		{"duplicates in a", []string{"a", "b", "a", "c", "b"}, []string{"b", "c"}, []string{"b", "c"}},
+		{"duplicates in b", []string{"a", "b", "c"}, []string{"b", "b", "c", "c"}, []string{"b", "c"}},
+		{"preserves order from a", []string{"d", "c", "b", "a"}, []string{"a", "b", "c"}, []string{"c", "b", "a"}},
+		{"unicode", []string{"hello", "мир", "world"}, []string{"мир", "test", "world"}, []string{"мир", "world"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := Intersection(tt.a, tt.b)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestNormalizeWhitespace(t *testing.T) {
+	tests := []struct {
+		name string
+		s    string
+		want string
+	}{
+		{"multiple spaces", "hello    world", "hello world"},
+		{"tabs and spaces", "hello\t\tworld  test", "hello world test"},
+		{"newlines", "hello\nworld\ntest", "hello world test"},
+		{"mixed whitespace", "  hello\t\n\r\nworld   ", "hello world"},
+		{"leading trailing", "   test   ", "test"},
+		{"empty string", "", ""},
+		{"only whitespace", "   \t\n\r\n   ", ""},
+		{"single word", "hello", "hello"},
+		{"normal spacing", "hello world", "hello world"},
+		{"unicode with spaces", "привет   мир", "привет мир"},
+		{"carriage returns", "hello\r\nworld\r\ntest", "hello world test"},
+		{"vertical tabs", "hello\vworld\ftest", "hello world test"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NormalizeWhitespace(tt.s)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestIsBlank(t *testing.T) {
+	tests := []struct {
+		name string
+		s    string
+		want bool
+	}{
+		{"empty string", "", true},
+		{"spaces only", "   ", true},
+		{"tabs only", "\t\t", true},
+		{"newlines only", "\n\n", true},
+		{"mixed whitespace", "  \t\n\r\n  ", true},
+		{"word with spaces", "  hello  ", false},
+		{"single word", "hello", false},
+		{"unicode spaces", "\u00A0\u2000\u2001", true}, // non-breaking space and other unicode spaces
+		{"unicode word", "мир", false},
+		{"zero with spaces", "  0  ", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsBlank(tt.s)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestRemovePrefix(t *testing.T) {
+	tests := []struct {
+		name   string
+		s      string
+		prefix string
+		want   string
+	}{
+		{"has prefix", "hello world", "hello ", "world"},
+		{"no prefix", "hello world", "goodbye ", "hello world"},
+		{"empty prefix", "hello", "", "hello"},
+		{"empty string", "", "hello", ""},
+		{"prefix is whole string", "hello", "hello", ""},
+		{"prefix longer than string", "hi", "hello", "hi"},
+		{"case sensitive", "Hello", "hello", "Hello"},
+		{"unicode prefix", "привет мир", "привет ", "мир"},
+		{"partial match not removed", "hello", "hell", "o"},
+		{"repeated prefix", "testtest", "test", "test"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := RemovePrefix(tt.s, tt.prefix)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestRemoveSuffix(t *testing.T) {
+	tests := []struct {
+		name   string
+		s      string
+		suffix string
+		want   string
+	}{
+		{"has suffix", "hello world", " world", "hello"},
+		{"no suffix", "hello world", " goodbye", "hello world"},
+		{"empty suffix", "hello", "", "hello"},
+		{"empty string", "", "hello", ""},
+		{"suffix is whole string", "hello", "hello", ""},
+		{"suffix longer than string", "hi", "hello", "hi"},
+		{"case sensitive", "Hello", "hello", "Hello"},
+		{"unicode suffix", "привет мир", " мир", "привет"},
+		{"partial match not removed", "hello", "ello", "h"},
+		{"repeated suffix", "testtest", "test", "test"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := RemoveSuffix(tt.s, tt.suffix)
+			assert.Equal(t, tt.want, result)
+		})
+	}
 }
