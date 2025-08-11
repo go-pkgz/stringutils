@@ -31,31 +31,13 @@ func ContainsAnySubstring(s string, subStrings []string) bool {
 	return false
 }
 
-// DeDup remove duplicates from slice. optimized for performance, good for short slices only!
+// DeDup remove duplicates from slice.
+// This function is stable - it preserves the order of first occurrences.
 func DeDup(keys []string) []string {
 	if len(keys) == 0 {
 		return nil
 	}
-	l := len(keys) - 1
-	for i := 0; i < l; i++ {
-		for j := i + 1; j <= l; j++ {
-			if keys[i] == keys[j] {
-				keys[j] = keys[l]
-				keys = keys[0:l]
-				l--
-				j--
-			}
-		}
-	}
-	return keys
-}
-
-// DeDupBig remove duplicates from slice. Should be used instead of DeDup for large slices
-func DeDupBig(keys []string) (result []string) {
-	if len(keys) == 0 {
-		return nil
-	}
-	result = make([]string, 0, len(keys))
+	result := make([]string, 0, len(keys))
 	visited := make(map[string]struct{}, len(keys))
 	for _, k := range keys {
 		if _, found := visited[k]; !found {
@@ -64,6 +46,12 @@ func DeDupBig(keys []string) (result []string) {
 		}
 	}
 	return result
+}
+
+// DeDupBig remove duplicates from slice.
+// Deprecated: Use DeDup instead. This function now just calls DeDup for backwards compatibility.
+func DeDupBig(keys []string) []string {
+	return DeDup(keys)
 }
 
 // SliceToString converts slice of any to slice of string
