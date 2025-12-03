@@ -49,6 +49,7 @@ func DeDup(keys []string) []string {
 }
 
 // DeDupBig remove duplicates from slice.
+//
 // Deprecated: Use DeDup instead. This function now just calls DeDup for backwards compatibility.
 func DeDupBig(keys []string) []string {
 	return DeDup(keys)
